@@ -1,0 +1,49 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the 'mb408sl-driver' package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 'mb408sl-driver' '1.0-20200212-dev'\n"
+"Report-Msgid-Bugs-To: 'nvda-translations@groups.io'\n"
+"POT-Creation-Date: 2020-02-12 17:34+0100\n"
+"PO-Revision-Date: 2020-02-12 17:35+0100\n"
+"Last-Translator: Alberto Buffolino <a.buffolino@gmail.com>\n"
+"Language-Team: \n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.2.3\n"
+
+#: addon\brailleDisplayDrivers\mb408sl.py:43
+msgid "MDV MB408S/L"
+msgstr "MDV MB408S/L"
+
+#. Translators: the label of a message box dialog.
+#: addon\installTasks.py:21
+msgid ""
+"Your old manual setup of MB408S/L driver will be deleted. Ensure to remember "
+"your manual changes before proceed."
+msgstr ""
+"La tua vecchia installazione manuale del driver MB408S/L verrà cancellata. "
+"Assicurati di ricordare i cambiamenti che hai effettuato manualmente prima "
+"di procedere."
+
+#. Translators: the title of a message box dialog.
+#: addon\installTasks.py:23
+msgid "Cleaning old add-on"
+msgstr "Pulizia del vecchio add-on"
+
+#. Add-on summary, usually the user visible name of the addon.
+#. Translators: Summary for this add-on to be shown on installation and add-on information.
+#: buildVars.py:17
+msgid "MB408S/L Braille display driver"
+msgstr "MB408S/L Braille display driver"
+
+#. Add-on description
+#. Translators: Long description to be shown for this add-on on add-on information from add-ons manager
+#: buildVars.py:20
+msgid "Provides NVDA support for MDV MB408 S and L Braille display."
+msgstr "Fornisce il supporto per NVDA per i display Braille MDV MB408 S e L."
