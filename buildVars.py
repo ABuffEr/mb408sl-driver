@@ -19,7 +19,7 @@ addon_info = {
 	# Translators: Long description to be shown for this add-on on add-on information from add-ons manager
 	"addon_description" : _("""Provides NVDA support for MDV MB408 S and L Braille display."""),
 	# version
-	"addon_version" : "1.0-20200212.1-dev",
+	"addon_version" : "1.0-20200212.2-dev",
 	# Author(s)
 	"addon_author" : u"Alberto Benassati, Gianluca Casalino, Alberto Buffolino <a.buffolino@gmail.com>",
 	# URL for the add-on documentation support

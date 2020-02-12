@@ -20,4 +20,4 @@ Packaged in .nvda-addon compatible with NVDA 2019.3 and later.
 Download it [here.][1]
 
 
-[1]: https://raw.githubusercontent.com/ABuffEr/mb408sl-driver/master/packages/mb408sl-driver-1.0-20200212.1-dev.nvda-addon
+[1]: https://raw.githubusercontent.com/ABuffEr/mb408sl-driver/master/packages/mb408sl-driver-1.0-20200212.2-dev.nvda-addon
