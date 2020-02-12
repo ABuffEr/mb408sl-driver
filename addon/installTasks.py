@@ -15,7 +15,7 @@ configPath = config.getUserDefaultConfigPath()
 def onInstall():
 	# try standard add-on removal
 	for addon in addonHandler.getAvailableAddons():
-		if addon.manifest['name'] == "mb408":
+		if addon.manifest['name'] in ("mb408", "MB408SLDriver"):
 			if gui.messageBox(
 				# Translators: the label of a message box dialog.
 				_("Your old manual setup of MB408S/L driver will be deleted. Ensure to remember your manual changes before proceed."),

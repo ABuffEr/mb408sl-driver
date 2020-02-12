@@ -10,10 +10,16 @@
 
 #from logHandler import log
 from ctypes import *
-import os
 import inputCore
 import wx
 import braille
+import os
+from collections import OrderedDict
+import serial
+import hwPortUtils
+import addonHandler
+
+addonHandler.initTranslation()
 
 dllFilePath = os.path.join(os.path.dirname(__file__), "mb408sl.dll")
 if isinstance(dllFilePath, bytes):
@@ -26,6 +32,12 @@ except:
 
 mbCellsMap=[]
 KEY_CHECK_INTERVAL = 50
+
+BLUETOOTH_NAMES = (
+	"mb408sl",
+	"mb408l",
+	"mb408s",
+)
 
 def convertMbCells(cell):
 	newCell = ((1<<6 if cell & 1<<4 else 0) |
@@ -40,21 +52,58 @@ def convertMbCells(cell):
 
 class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 	name = "mb408sl"
-	description = _("MDV MB408S/L")
+	description = _("MDV Mb408 sl")
 
 	@classmethod
 	def check(cls):
 		return bool(mbDll)
 
-	def  __init__(self):
+	@classmethod
+	def getPossiblePorts(cls):
+		ports = OrderedDict()
+		comPorts = list(hwPortUtils.listComPorts(onlyAvailable=True))
+		try:
+			next(cls._getAutoPorts(comPorts))
+			ports.update((cls.AUTOMATIC_PORT,))
+		except StopIteration:
+			pass
+		for portInfo in comPorts:
+			# Translators: Name of a serial communications port.
+			ports[portInfo["port"]] = _("Serial: {portName}").format(portName=portInfo["friendlyName"])
+		return ports
+
+	@classmethod
+	def _getAutoPorts(cls, comPorts):
+		# Try bluetooth ports last.
+		for portInfo in sorted(comPorts, key=lambda item: "bluetoothName" in item):
+			port = portInfo["port"]
+			hwID = portInfo["hardwareID"]
+			if "bluetoothName" in portInfo:
+				# Bluetooth.
+				portType = "bluetooth"
+				btName = portInfo["bluetoothName"]
+				if not any(btName.startswith(prefix) for prefix in BLUETOOTH_NAMES):
+					continue
+			else:
+				continue
+			yield port, portType
+
+	def  __init__(self, port="auto"):
 		global mbCellsMap
 		super(BrailleDisplayDriver, self).__init__()
 		mbCellsMap=[convertMbCells(x) for x in range(256)]
-		if (mbDll.BrlInit("COM1", 19200)):
-			self._keyCheckTimer = wx.PyTimer(self._handleKeyPresses)
-			self._keyCheckTimer.Start(KEY_CHECK_INTERVAL)
+		if port == "auto":
+			tryPorts = self._getAutoPorts(hwPortUtils.listComPorts(onlyAvailable=True))
 		else:
-			raise RuntimeError("No display found")
+			tryPorts = ((port, "serial"),)
+		for port, portType in tryPorts:
+			# At this point, a port bound to this display has been found.
+			# Try talking to the display.
+			if (mbDll.BrlInit(port, 19200)):
+				self._keyCheckTimer = wx.PyTimer(self._handleKeyPresses)
+				self._keyCheckTimer.Start(KEY_CHECK_INTERVAL)
+			else:
+				raise RuntimeError("No display found")
 
 	def terminate(self):
 		super(BrailleDisplayDriver, self).terminate()
@@ -99,13 +148,14 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			"braille_scrollBack": ("br(mb):LF",),
 			"braille_previousLine": ("br(mb):UP",),
 			"braille_nextLine": ("br(mb):DN",),
-			"braille_scrollForward": ("br(mb):RG",),			
+			"braille_scrollForward": ("br(mb):RG",),
 			"kb:shift+tab": ("br(mb):SLF",),
 			"kb:tab": ("br(mb):SRG",),
 			"kb:alt+tab": ("br(mb):SDN",),
 			"kb:alt+shift+tab": ("br(mb):SUP",),
 		}
 	})
+
 
 class InputGesture(braille.BrailleDisplayGesture):
 
