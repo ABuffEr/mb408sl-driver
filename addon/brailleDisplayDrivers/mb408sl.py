@@ -71,18 +71,19 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			ports[p["port"]] = _("Serial: {portName}").format(portName=p["friendlyName"])
 		return ports
 
-	def  __init__(self,port):
+	def  __init__(self, port):
 		global mbCellsMap
 		super(BrailleDisplayDriver, self).__init__()
 		mbCellsMap=[convertMbCells(x) for x in range(256)]
-		self._port = str(port) 
-		log.info("MDV using port *"+self._port+"*")
+		self._port = port
+		log.info("MDV using port "+self._port)
 		self._dev = None
 		dic = -1
+		b_port = bytes(self._port.encode("mbcs"))
 		for baud in (38400, 19200):
 			if(self._dev is None):
 				log.info("try MDV using port "+self._port+" at baud "+str(baud))
-				if (mbDll.BrlInit(self._port, baud)): 
+				if (mbDll.BrlInit(b_port, baud)): 
 					log.info("FOUND MDV using port "+self._port+" at baud "+str(baud))
 					self._keyCheckTimer = wx.PyTimer(self._handleKeyPresses)
 					self._keyCheckTimer.Start(KEY_CHECK_INTERVAL)
@@ -126,6 +127,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 
 	def display(self, cells):
 		cells="".join(chr(mbCellsMap[x]) for x in cells)
+		cells=bytes(cells.encode("raw_unicode_escape"))
 		mbDll.WriteBuf(cells) 
 
 	gestureMap = inputCore.GlobalGestureMap({
