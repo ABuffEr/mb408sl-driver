@@ -21,12 +21,15 @@ import serial
 import hwPortUtils
 import time
 import addonHandler
+import sys
+
+py3=sys.version.startswith("3")
 
 addonHandler.initTranslation()
 
-dllFilePath = os.path.join(os.path.dirname(__file__), "mb408sl.dll")
-if isinstance(dllFilePath, bytes):
-	dllFilePath = dllFilePath.decode("mbcs")
+dllFilePath=os.path.join(os.path.dirname(__file__), "mb408sl.dll")
+if not py3:
+	dllFilePath=dllFilePath.decode("mbcs")
 
 try:
 	mbDll=windll.LoadLibrary(dllFilePath)
@@ -57,21 +60,21 @@ def convertMbCells(cell):
 
 class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 	name = "mb408sl"
-	description = _("MDV Mb408SL")
+	description = _("MDV Mb408S/L")
 
-	@classmethod  
+	@classmethod
 	def check(cls):
 		return bool(mbDll)
 
 	@classmethod
 	def getPossiblePorts(cls):
 		ports = OrderedDict()
-		for p in hwPortUtils.listComPorts(): 
-		# Translators: Name of a serial communications port 
+		for p in hwPortUtils.listComPorts():
+		# Translators: Name of a serial communications port
 			ports[p["port"]] = _("Serial: {portName}").format(portName=p["friendlyName"])
 		return ports
 
-	def  __init__(self, port):
+	def  __init__(self,port):
 		global mbCellsMap
 		super(BrailleDisplayDriver, self).__init__()
 		mbCellsMap=[convertMbCells(x) for x in range(256)]
@@ -79,11 +82,11 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 		log.info("MDV using port "+self._port)
 		self._dev = None
 		dic = -1
-		b_port = bytes(self._port.encode("mbcs"))
+		portArg = bytes(self._port.encode("mbcs")) if py3 else self._port
 		for baud in (38400, 19200):
 			if(self._dev is None):
 				log.info("try MDV using port "+self._port+" at baud "+str(baud))
-				if (mbDll.BrlInit(b_port, baud)): 
+				if (mbDll.BrlInit(portArg, baud)):
 					log.info("FOUND MDV using port "+self._port+" at baud "+str(baud))
 					self._keyCheckTimer = wx.PyTimer(self._handleKeyPresses)
 					self._keyCheckTimer.Start(KEY_CHECK_INTERVAL)
@@ -118,17 +121,18 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 
 	def _onKeyPress(self, key):
 		try:
-			if (key >= 257) and (key <= 296):                                 
-			    inputCore.manager.executeGesture(InputGesture(MB_KEYS[65],key-256))
+			if (key >= 257) and (key <= 296):
+				inputCore.manager.executeGesture(InputGesture(MB_KEYS[65],key-256))
 			if (key <= 64):
-			    inputCore.manager.executeGesture(InputGesture(MB_KEYS[key],0))
+				inputCore.manager.executeGesture(InputGesture(MB_KEYS[key],0))
 		except inputCore.NoInputGestureAction:
 			pass
 
 	def display(self, cells):
 		cells="".join(chr(mbCellsMap[x]) for x in cells)
-		cells=bytes(cells.encode("raw_unicode_escape"))
-		mbDll.WriteBuf(cells) 
+		if py3:
+			cells=bytes(cells.encode("raw_unicode_escape"))
+		mbDll.WriteBuf(cells)
 
 	gestureMap = inputCore.GlobalGestureMap({
 		"globalCommands.GlobalCommands": {
@@ -148,18 +152,18 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			"kb:downArrow": ("br(mb408sl):SDN",),
 			"kb:upArrow": ("br(mb408sl):SUP",),
 
-			"braille_toggleTether": ("br(mb408sl):F5",), 
-			"review_currentCharacter": ("br(mb408sl):F4",), 
-			"review_activate": ("br(mb408sl):F3",), 
-			"reportFormatting": ("br(mb408sl):F10",), 
+			"braille_toggleTether": ("br(mb408sl):F5",),
+			"review_currentCharacter": ("br(mb408sl):F4",),
+			"review_activate": ("br(mb408sl):F3",),
+			"reportFormatting": ("br(mb408sl):F10",),
 
-			"navigatorObject_previous": ("br(mb408sl):F6",), 
-			"navigatorObject_next": ("br(mb408sl):F7",), 
-			"navigatorObject_parent": ("br(mb408sl):F8",), 
-			"navigatorObject_firstChild": ("br(mb408sl):F9",), 
+			"navigatorObject_previous": ("br(mb408sl):F6",),
+			"navigatorObject_next": ("br(mb408sl):F7",),
+			"navigatorObject_parent": ("br(mb408sl):F8",),
+			"navigatorObject_firstChild": ("br(mb408sl):F9",),
 
-			"title": ("br(mb408sl):F1",), 
-			"reportStatusLine": ("br(mb408sl):F2",), 
+			"title": ("br(mb408sl):F1",),
+			"reportStatusLine": ("br(mb408sl):F2",),
 		}
 	})
 
