@@ -1,0 +1,8 @@
+This folder contains various versions of same driver, modified in different times and, probably, by different people (included me).
+
+Difference summary:
+.1: from nvda.it site, original, running from brailleDisplaydrivers under nvda.exe path;
+.2: same as .1, but with loading of dll from current path;
+.3: same as .2, but with port selection and some new gestures;
+.4: similar to .3, with specific Bluetooth checks in port autoselection;
+mb248: from mdvbologna.it, similar to .3, some gesture differences.

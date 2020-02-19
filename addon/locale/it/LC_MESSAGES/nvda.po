@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 'mb408sl-driver' '1.0-20200212-dev'\n"
 "Report-Msgid-Bugs-To: 'nvda-translations@groups.io'\n"
-"POT-Creation-Date: 2020-02-12 17:34+0100\n"
-"PO-Revision-Date: 2020-02-12 17:35+0100\n"
+"POT-Creation-Date: 2020-02-19 16:11+0100\n"
+"PO-Revision-Date: 2020-02-19 16:12+0100\n"
 "Last-Translator: Alberto Buffolino <a.buffolino@gmail.com>\n"
 "Language-Team: \n"
 "Language: it\n"
@@ -17,17 +17,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.2.3\n"
 
-#: addon\brailleDisplayDrivers\mb408sl.py:43
-msgid "MDV MB408S/L"
-msgstr "MDV MB408S/L"
-
 #. Translators: the label of a message box dialog.
 #: addon\installTasks.py:21
 msgid ""
-"Your old manual setup of MB408S/L driver will be deleted. Ensure to remember "
-"your manual changes before proceed."
+"Your old setup of MB408S/L driver will be deleted. Ensure to remember your "
+"manual changes before proceed."
 msgstr ""
-"La tua vecchia installazione manuale del driver MB408S/L verrà cancellata. "
+"La tua vecchia installazione del driver MB408S/L verrà cancellata. "
 "Assicurati di ricordare i cambiamenti che hai effettuato manualmente prima "
 "di procedere."
 
@@ -47,3 +43,6 @@ msgstr "MB408S/L Braille display driver"
 #: buildVars.py:20
 msgid "Provides NVDA support for MDV MB408 S and L Braille display."
 msgstr "Fornisce il supporto per NVDA per i display Braille MDV MB408 S e L."
+
+#~ msgid "MDV MB408S/L"
+#~ msgstr "MDV MB408S/L"

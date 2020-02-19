@@ -6,7 +6,7 @@
 # Copyright (C) 2011 Alberto Benassati <benassati@cavazza.it>
 # for main initial development;
 # Copyright (C) 2020 Alberto Buffolino <a.buffolino@gmail.com>
-# for NVDA 2019.3 add-on packaging;
+# for NVDA 2019.3 add-on packaging and fixes;
 # and various others (not easily discoverable)
 # for port selection and gesture additions
 
@@ -17,28 +17,16 @@ import wx
 import braille
 import os
 from collections import OrderedDict
-import serial
 import hwPortUtils
-import time
 import addonHandler
 import sys
+import config
+from speech import speakMessage, Spri
 
-py3=sys.version.startswith("3")
+py3 = sys.version.startswith("3")
 
-addonHandler.initTranslation()
-
-dllFilePath=os.path.join(os.path.dirname(__file__), "mb408sl.dll")
-if not py3:
-	dllFilePath=dllFilePath.decode("mbcs")
-
-try:
-	mbDll=windll.LoadLibrary(dllFilePath)
-except:
-	mbDll=None
-
-mbCellsMap=[]
+mbCellsMap = []
 KEY_CHECK_INTERVAL = 50
-
 MB_KEYS = [
 	"", "F1", "F2", "F3", "F4",  "F5", "F6", "F7", "F8", "F9", "F10", "LF", "UP", "RG", "DN", "",
 	"", "SF1", "SF2", "SF3", "SF4",  "SF5", "SF6", "SF7", "SF8", "SF9", "SF10", "SLF", "SUP", "SRG", "SDN", "",
@@ -46,6 +34,37 @@ MB_KEYS = [
 	"", "SLF1", "SLF2", "SLF3", "SLF4",  "SLF5", "SLF6", "SLF7", "SLF8", "SLF9", "SLF10", "SLLF", "SLUP", "SLRG", "SLDN", "SFDN", "SFUP",
 	"route"
 ]
+mbDll = None
+mbBaud = None
+
+def loadDll():
+	global mbDll
+	if mbDll:
+		try:
+			windll.kernel32.FreeLibrary(mbDll._handle)
+		except:
+			pass
+	dllFilePath = os.path.join(os.path.dirname(__file__), "mb408sl.dll")
+	if isinstance(dllFilePath, bytes):
+		dllFilePath = dllFilePath.decode("mbcs")
+	try:
+		mbDll = windll.LoadLibrary(dllFilePath)
+	except:
+		pass
+
+def loadBaud():
+	global mbBaud
+	try:
+		mbBaud = int(config.conf["braille"]["mb408sl"]["baud"])
+	except:
+		pass
+
+def resetBaud():
+	global mbBaud
+	config.conf["braille"]["mb408sl"]["baud"] = mbBaud = None
+
+def saveBaud():
+	config.conf["braille"]["mb408sl"]["baud"] = mbBaud
 
 def convertMbCells(cell):
 	newCell = ((1<<6 if cell & 1<<4 else 0) |
@@ -58,9 +77,13 @@ def convertMbCells(cell):
 		(1<<4 if cell & 1<<7  else 0))
 	return newCell
 
+loadDll()
+loadBaud()
+
 class BrailleDisplayDriver(braille.BrailleDisplayDriver):
+
 	name = "mb408sl"
-	description = _("MDV Mb408S/L")
+	description = "MDV MB408S/L"
 
 	@classmethod
 	def check(cls):
@@ -70,33 +93,41 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 	def getPossiblePorts(cls):
 		ports = OrderedDict()
 		for p in hwPortUtils.listComPorts():
-		# Translators: Name of a serial communications port
+			# Translators: Name of a serial communications port
 			ports[p["port"]] = _("Serial: {portName}").format(portName=p["friendlyName"])
 		return ports
 
-	def  __init__(self,port):
-		global mbCellsMap
+	def __init__(self, port):
+		global mbCellsMap, mbBaud, mbDll
 		super(BrailleDisplayDriver, self).__init__()
-		mbCellsMap=[convertMbCells(x) for x in range(256)]
-		self._port = port
-		log.info("MDV using port "+self._port)
-		self._dev = None
-		dic = -1
-		portArg = bytes(self._port.encode("mbcs")) if py3 else self._port
-		for baud in (38400, 19200):
-			if(self._dev is None):
-				log.info("try MDV using port "+self._port+" at baud "+str(baud))
-				if (mbDll.BrlInit(portArg, baud)):
-					log.info("FOUND MDV using port "+self._port+" at baud "+str(baud))
-					self._keyCheckTimer = wx.PyTimer(self._handleKeyPresses)
-					self._keyCheckTimer.Start(KEY_CHECK_INTERVAL)
-					self._dev = 1
-					dic = 1
-		if (dic == -1):
-			raise Exception("No or unknown braille display found "+self._port)
+		mbCellsMap = [convertMbCells(x) for x in range(256)]
+		if mbBaud:
+			log.info("Try MDV on port %s at saved baud %d"%(port, mbBaud))
+		else:
+			log.info("Try MDV on port %s at baud 38400 and 19200"%port)
+		mbPort = bytes(port.encode("mbcs"))
+		mbFound = False
+		bauds = (mbBaud,) if mbBaud else (38400, 19200)
+		if not mbBaud:
+			speakMessage(_("Please wait"), Spri.NOW)
+		for baud in bauds:
+			log.info("Trying baud %d"%baud)
+			if mbDll.BrlInit(mbPort, baud):
+				mbBaud = baud
+				mbFound = True
+				log.info("Found MDV on port %s at baud %d"%(port, baud))
+				break
+		if not mbFound:
+			resetBaud()
+			loadDll()
+			raise RuntimeError("No MB408 display found")
+		else:
+			self._keyCheckTimer = wx.PyTimer(self._handleKeyPresses)
+			self._keyCheckTimer.Start(KEY_CHECK_INTERVAL)
+			saveBaud()
 
 	def terminate(self):
-		log.info("MDV close port "+self._port)
+		log.info("MDV terminate")
 		super(BrailleDisplayDriver, self).terminate()
 		try:
 			mbDll.BrlTerminate()
@@ -104,7 +135,6 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			self._keyCheckTimer = None
 		except:
 			pass
-		time.sleep(2)
 
 	def _get_numCells(self):
 		return 40
@@ -112,7 +142,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 	def _handleKeyPresses(self):
 		while True:
 			try:
-				key=mbDll.ReadBuf()
+				key = mbDll.ReadBuf()
 			except:
 				pass
 			if not key: break
@@ -131,7 +161,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 	def display(self, cells):
 		cells="".join(chr(mbCellsMap[x]) for x in cells)
 		if py3:
-			cells=bytes(cells.encode("raw_unicode_escape"))
+			cells = bytes(cells.encode("raw_unicode_escape"))
 		mbDll.WriteBuf(cells)
 
 	gestureMap = inputCore.GlobalGestureMap({

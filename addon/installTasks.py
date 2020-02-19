@@ -18,7 +18,7 @@ def onInstall():
 		if addon.manifest['name'] in ("mb408", "MB408SLDriver"):
 			if gui.messageBox(
 				# Translators: the label of a message box dialog.
-				_("Your old manual setup of MB408S/L driver will be deleted. Ensure to remember your manual changes before proceed."),
+				_("Your old setup of MB408S/L driver will be deleted. Ensure to remember your manual changes before proceed."),
 				# Translators: the title of a message box dialog.
 				_("Cleaning old add-on"),
 				wx.YES|wx.NO|wx.ICON_WARNING) == wx.YES:
