@@ -21,9 +21,16 @@ import hwPortUtils
 import addonHandler
 import sys
 import config
-from speech import speakMessage, Spri
-
+from speech import speakMessage
+try:
+	from six.moves import range as rangeFunc
+except ImportError:
+	rangeFunc = xrange
+except NameError:
+	rangeFunc = range
 py3 = sys.version.startswith("3")
+if py3:
+	from speech import Spri
 
 mbCellsMap = []
 KEY_CHECK_INTERVAL = 50
@@ -100,7 +107,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 	def __init__(self, port):
 		global mbCellsMap, mbBaud, mbDll
 		super(BrailleDisplayDriver, self).__init__()
-		mbCellsMap = [convertMbCells(x) for x in range(256)]
+		mbCellsMap = [convertMbCells(x) for x in rangeFunc(256)]
 		if mbBaud:
 			log.info("Try MDV on port %s at saved baud %d"%(port, mbBaud))
 		else:
@@ -109,7 +116,8 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 		mbFound = False
 		bauds = (mbBaud,) if mbBaud else (38400, 19200)
 		if not mbBaud:
-			speakMessage(_("Please wait"), Spri.NOW)
+			args = (_("Please wait"), Spri.NOW,) if py3 else (_("Please wait"),)
+			speakMessage(*args)
 		for baud in bauds:
 			log.info("Trying baud %d"%baud)
 			if mbDll.BrlInit(mbPort, baud):
