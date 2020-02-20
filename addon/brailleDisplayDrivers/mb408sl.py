@@ -44,14 +44,16 @@ MB_KEYS = [
 mbDll = None
 mbBaud = None
 
-def loadDll():
+def loadDll(baud):
 	global mbDll
 	if mbDll:
 		try:
 			windll.kernel32.FreeLibrary(mbDll._handle)
 		except:
 			pass
-	dllFilePath = os.path.join(os.path.dirname(__file__), "mb408sl.dll")
+	if not baud:
+		baud = 38400
+	dllFilePath = os.path.join(os.path.dirname(__file__), "mb408sl-%s.dll"%baud)
 	if isinstance(dllFilePath, bytes):
 		dllFilePath = dllFilePath.decode("mbcs")
 	try:
@@ -84,8 +86,8 @@ def convertMbCells(cell):
 		(1<<4 if cell & 1<<7  else 0))
 	return newCell
 
-loadDll()
 loadBaud()
+loadDll(mbBaud)
 
 class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 
@@ -100,6 +102,12 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 	def getPossiblePorts(cls):
 		ports = OrderedDict()
 		for p in hwPortUtils.listComPorts():
+			log.info("Port %s"%p)
+			if "bluetoothAddress" in p.keys():
+				if p["bluetoothAddress"] and p["bluetoothName"].startswith("408L-"):
+					# Translators: Name of a Bluetooth serial communications port
+					ports[p["port"]] = _("Bluetooth Serial: {port} ({deviceName})").format(port=p["port"], deviceName=p["bluetoothName"])
+				continue
 			# Translators: Name of a serial communications port
 			ports[p["port"]] = _("Serial: {portName}").format(portName=p["friendlyName"])
 		return ports
@@ -120,6 +128,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			speakMessage(*args)
 		for baud in bauds:
 			log.info("Trying baud %d"%baud)
+			loadDll(baud)
 			if mbDll.BrlInit(mbPort, baud):
 				mbBaud = baud
 				mbFound = True
@@ -127,7 +136,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 				break
 		if not mbFound:
 			resetBaud()
-			loadDll()
+			loadDll(mbBaud)
 			raise RuntimeError("No MB408 display found")
 		else:
 			self._keyCheckTimer = wx.PyTimer(self._handleKeyPresses)
