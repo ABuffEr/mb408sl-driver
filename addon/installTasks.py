@@ -1,7 +1,5 @@
 # -*- coding: UTF-8 -*-
 import addonHandler
-import gui
-import wx
 import os
 import sys
 import config
@@ -13,6 +11,8 @@ configPath = config.getUserDefaultConfigPath()
 
 # clean old manual setup
 def onInstall():
+	import gui
+	import wx
 	# try standard add-on removal
 	for addon in addonHandler.getAvailableAddons():
 		if addon.manifest['name'] in ("mb408", "MB408SLDriver"):
